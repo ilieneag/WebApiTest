@@ -137,4 +137,68 @@ namespace WebApi.Middleware
             };
         }
     }
+
+    public class ErrorResponse
+    {
+        public string Error { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public object? Details { get; set; }
+        public string? StackTrace { get; set; }
+        public string? Source { get; set; }
+        public string? TraceId { get; set; }
+        public DateTime Timestamp { get; set; }
+        public string Path { get; set; } = string.Empty;
+        public string Method { get; set; } = string.Empty;
+    }
+
+    public class ValidationException : Exception
+    {
+        public object? Errors { get; }
+
+        public ValidationException(string message) : base(message)
+        {
+        }
+
+        public ValidationException(string message, object errors) : base(message)
+        {
+            Errors = errors;
+        }
+
+        public ValidationException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
+
+    public class NotFoundException : Exception
+    {
+        public NotFoundException(string message) : base(message)
+        {
+        }
+
+        public NotFoundException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
+
+    public class UnauthorizedException : Exception
+    {
+        public UnauthorizedException(string message) : base(message)
+        {
+        }
+
+        public UnauthorizedException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
+
+    public class ConflictException : Exception
+    {
+        public ConflictException(string message) : base(message)
+        {
+        }
+
+        public ConflictException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
 }

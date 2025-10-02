@@ -3,16 +3,6 @@ namespace WebApi.Middleware
     public static class MiddlewareExtensions
     {
         /// <summary>
-        /// Adds the global error handling middleware to the application pipeline
-        /// </summary>
-        /// <param name="builder">The application builder</param>
-        /// <returns>The application builder for chaining</returns>
-        public static IApplicationBuilder UseErrorHandling(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<ErrorHandlingMiddleware>();
-        }
-
-        /// <summary>
         /// Adds the simple error handling middleware to the application pipeline (recommended)
         /// </summary>
         /// <param name="builder">The application builder</param>
