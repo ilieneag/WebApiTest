@@ -65,7 +65,7 @@ try
     if (app.Environment.IsDevelopment())
     {
         // Use basic logging instead of detailed logging to avoid conflicts
-        // app.UseDetailedRequestResponseLogging(logRequestBody: true, logResponseBody: true, maxBodySize: 8192);
+        app.UseDetailedRequestResponseLogging(logRequestBody: true, logResponseBody: true, maxBodySize: 8192);
     }
 
     // Remove HTTPS redirection so you can test with http

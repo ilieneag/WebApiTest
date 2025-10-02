@@ -59,10 +59,17 @@ namespace WebApi.Middleware
                 );
             }
 
-            // Capture response body if logging is enabled
-            var originalResponseBodyStream = context.Response.Body;
-            using var responseBody = new MemoryStream();
-            context.Response.Body = responseBody;
+            // Only capture response body if logging is enabled AND no exceptions occur
+            Stream? originalResponseBodyStream = null;
+            MemoryStream? responseBody = null;
+            bool exceptionOccurred = false;
+
+            if (_logResponseBody)
+            {
+                originalResponseBodyStream = context.Response.Body;
+                responseBody = new MemoryStream();
+                context.Response.Body = responseBody;
+            }
 
             try
             {
@@ -71,29 +78,44 @@ namespace WebApi.Middleware
             }
             catch (Exception ex)
             {
+                exceptionOccurred = true;
+                
+                // Restore original response stream for error handling middleware
+                if (originalResponseBodyStream != null)
+                {
+                    context.Response.Body = originalResponseBodyStream;
+                }
+
                 _logger.LogError(ex, 
                     "Exception occurred during request processing: {Method} {Path}",
                     request.Method,
                     request.Path
                 );
-                throw; // Re-throw to let other middleware handle it
+                
+                throw; // Re-throw to let error handling middleware handle it
             }
             finally
             {
                 stopwatch.Stop();
                 var response = context.Response;
                 
-                // Log outgoing response with optional body
+                // Only process response body if no exception occurred and we were capturing it
                 string responseBodyContent = string.Empty;
-                if (_logResponseBody && responseBody.Length > 0)
+                if (_logResponseBody && !exceptionOccurred && responseBody != null && responseBody.Length > 0)
                 {
                     responseBody.Seek(0, SeekOrigin.Begin);
                     responseBodyContent = await new StreamReader(responseBody).ReadToEndAsync();
                     responseBody.Seek(0, SeekOrigin.Begin);
+                    
+                    // Copy the response body back to the original stream
+                    if (originalResponseBodyStream != null)
+                    {
+                        await responseBody.CopyToAsync(originalResponseBodyStream);
+                    }
                 }
 
-                // Copy the response body back to the original stream
-                await responseBody.CopyToAsync(originalResponseBodyStream);
+                // Clean up
+                responseBody?.Dispose();
 
                 var logLevel = GetLogLevel(response.StatusCode);
                 

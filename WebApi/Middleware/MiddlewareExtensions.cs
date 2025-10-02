@@ -13,16 +13,6 @@ namespace WebApi.Middleware
         }
 
         /// <summary>
-        /// Adds the request/response logging middleware to the application pipeline
-        /// </summary>
-        /// <param name="builder">The application builder</param>
-        /// <returns>The application builder for chaining</returns>
-        public static IApplicationBuilder UseRequestResponseLogging(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<RequestResponseLoggingMiddleware>();
-        }
-
-        /// <summary>
         /// Adds the detailed request/response logging middleware to the application pipeline
         /// </summary>
         /// <param name="builder">The application builder</param>
@@ -40,25 +30,6 @@ namespace WebApi.Middleware
                 logRequestBody, 
                 logResponseBody, 
                 maxBodySize);
-        }
-
-        /// <summary>
-        /// Adds the configurable request/response logging middleware to the application pipeline
-        /// </summary>
-        /// <param name="builder">The application builder</param>
-        /// <param name="configureOptions">Action to configure logging options</param>
-        /// <returns>The application builder for chaining</returns>
-        public static IApplicationBuilder UseConfigurableRequestResponseLogging(
-            this IApplicationBuilder builder,
-            Action<RequestResponseLoggingOptions>? configureOptions = null)
-        {
-            if (configureOptions != null)
-            {
-                builder.ApplicationServices.GetRequiredService<IServiceCollection>()
-                    .Configure(configureOptions);
-            }
-            
-            return builder.UseMiddleware<ConfigurableRequestResponseLoggingMiddleware>();
         }
     }
 }
