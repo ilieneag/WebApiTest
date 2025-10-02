@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using WebApi.Models;
 using WebApi.DTOs;
 using WebApi.Services;
+using WebApi.Middleware;
 
 namespace WebApi.Controllers
 {
@@ -23,15 +24,8 @@ namespace WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            try
-            {
-                var users = await _userService.GetAllUsersAsync();
-                return Ok(users);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while retrieving users", error = ex.Message });
-            }
+            var users = await _userService.GetAllUsersAsync();
+            return Ok(users);
         }
 
         /// <summary>
@@ -42,26 +36,19 @@ namespace WebApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            try
+            if (id <= 0)
             {
-                if (id <= 0)
-                {
-                    return BadRequest(new { message = "Invalid user ID" });
-                }
-
-                var user = await _userService.GetUserByIdAsync(id);
-                
-                if (user == null)
-                {
-                    return NotFound(new { message = $"User with ID {id} not found" });
-                }
-
-                return Ok(user);
+                throw new ValidationException("User ID must be greater than 0");
             }
-            catch (Exception ex)
+
+            var user = await _userService.GetUserByIdAsync(id);
+            
+            if (user == null)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving the user", error = ex.Message });
+                throw new NotFoundException($"User with ID {id} not found");
             }
+
+            return Ok(user);
         }
 
         /// <summary>
@@ -72,31 +59,31 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserDto createUserDto)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                // Check if email already exists
-                if (await _userService.EmailExistsAsync(createUserDto.Email))
-                {
-                    return Conflict(new { message = "A user with this email already exists" });
-                }
-
-                var user = await _userService.CreateUserAsync(createUserDto);
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
                 
-                return CreatedAtAction(
-                    nameof(GetUser), 
-                    new { id = user.Id }, 
-                    user
-                );
+                throw new ValidationException("Validation failed", errors);
             }
-            catch (Exception ex)
+
+            // Check if email already exists
+            if (await _userService.EmailExistsAsync(createUserDto.Email))
             {
-                return StatusCode(500, new { message = "An error occurred while creating the user", error = ex.Message });
+                throw new ConflictException("A user with this email already exists");
             }
+
+            var user = await _userService.CreateUserAsync(createUserDto);
+            
+            return CreatedAtAction(
+                nameof(GetUser), 
+                new { id = user.Id }, 
+                user
+            );
         }
 
         /// <summary>
@@ -108,44 +95,44 @@ namespace WebApi.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<User>> UpdateUser(int id, [FromBody] UpdateUserDto updateUserDto)
         {
-            try
+            if (id <= 0)
             {
-                if (id <= 0)
-                {
-                    return BadRequest(new { message = "Invalid user ID" });
-                }
+                throw new ValidationException("User ID must be greater than 0");
+            }
 
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                // Check if user exists
-                if (!await _userService.UserExistsAsync(id))
-                {
-                    return NotFound(new { message = $"User with ID {id} not found" });
-                }
-
-                // Check if email already exists for another user
-                if (!string.IsNullOrEmpty(updateUserDto.Email) && 
-                    await _userService.EmailExistsAsync(updateUserDto.Email, id))
-                {
-                    return Conflict(new { message = "A user with this email already exists" });
-                }
-
-                var updatedUser = await _userService.UpdateUserAsync(id, updateUserDto);
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
                 
-                if (updatedUser == null)
-                {
-                    return NotFound(new { message = $"User with ID {id} not found" });
-                }
+                throw new ValidationException("Validation failed", errors);
+            }
 
-                return Ok(updatedUser);
-            }
-            catch (Exception ex)
+            // Check if user exists
+            if (!await _userService.UserExistsAsync(id))
             {
-                return StatusCode(500, new { message = "An error occurred while updating the user", error = ex.Message });
+                throw new NotFoundException($"User with ID {id} not found");
             }
+
+            // Check if email already exists for another user
+            if (!string.IsNullOrEmpty(updateUserDto.Email) && 
+                await _userService.EmailExistsAsync(updateUserDto.Email, id))
+            {
+                throw new ConflictException("A user with this email already exists");
+            }
+
+            var updatedUser = await _userService.UpdateUserAsync(id, updateUserDto);
+            
+            if (updatedUser == null)
+            {
+                throw new NotFoundException($"User with ID {id} not found");
+            }
+
+            return Ok(updatedUser);
         }
 
         /// <summary>
@@ -156,25 +143,54 @@ namespace WebApi.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteUser(int id)
         {
-            try
+            if (id <= 0)
             {
-                if (id <= 0)
-                {
-                    return BadRequest(new { message = "Invalid user ID" });
-                }
-
-                var result = await _userService.DeleteUserAsync(id);
-                
-                if (!result)
-                {
-                    return NotFound(new { message = $"User with ID {id} not found" });
-                }
-
-                return Ok(new { message = $"User with ID {id} has been successfully deleted" });
+                throw new ValidationException("User ID must be greater than 0");
             }
-            catch (Exception ex)
+
+            var result = await _userService.DeleteUserAsync(id);
+            
+            if (!result)
             {
-                return StatusCode(500, new { message = "An error occurred while deleting the user", error = ex.Message });
+                throw new NotFoundException($"User with ID {id} not found");
+            }
+
+            return Ok(new { message = $"User with ID {id} has been successfully deleted" });
+        }
+
+        /// <summary>
+        /// Test endpoint to demonstrate error handling
+        /// </summary>
+        /// <param name="errorType">Type of error to simulate</param>
+        /// <returns>Throws specified error type</returns>
+        [HttpGet("test-error/{errorType}")]
+        public ActionResult TestError(string errorType)
+        {
+            switch (errorType.ToLower())
+            {
+                case "validation":
+                    throw new ValidationException("This is a test validation error", new { field1 = "Error message 1", field2 = "Error message 2" });
+                
+                case "notfound":
+                    throw new NotFoundException("This is a test not found error");
+                
+                case "conflict":
+                    throw new ConflictException("This is a test conflict error");
+                
+                case "unauthorized":
+                    throw new UnauthorizedException("This is a test unauthorized error");
+                
+                case "argument":
+                    throw new ArgumentException("This is a test argument error");
+                
+                case "invalidoperation":
+                    throw new InvalidOperationException("This is a test invalid operation error");
+                
+                case "generic":
+                    throw new Exception("This is a test generic exception");
+                
+                default:
+                    return Ok(new { message = "No error thrown. Valid error types: validation, notfound, conflict, unauthorized, argument, invalidoperation, generic" });
             }
         }
     }

@@ -30,7 +30,10 @@ try
 
     var app = builder.Build();
 
-    // Add Serilog request logging middleware (replaces our custom middleware for HTTP logging)
+    // Add simple error handling middleware first to catch all exceptions (no stream conflicts)
+    app.UseSimpleErrorHandling();
+
+    // Add Serilog request logging middleware
     app.UseSerilogRequestLogging(options =>
     {
         // Customize the message template
@@ -58,9 +61,11 @@ try
     // Configure the HTTP request pipeline.
 
     // Add our custom detailed logging middleware for development (optional - shows request/response bodies)
+    // Note: Placed after error handling to avoid stream conflicts
     if (app.Environment.IsDevelopment())
     {
-        app.UseDetailedRequestResponseLogging(logRequestBody: true, logResponseBody: true, maxBodySize: 8192);
+        // Use basic logging instead of detailed logging to avoid conflicts
+        // app.UseDetailedRequestResponseLogging(logRequestBody: true, logResponseBody: true, maxBodySize: 8192);
     }
 
     // Remove HTTPS redirection so you can test with http

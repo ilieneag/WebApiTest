@@ -1,0 +1,93 @@
+### Error Handling Middleware Testing
+
+@baseUrl = http://localhost:5233/api
+
+### Test normal GET request (should work fine)
+GET {{baseUrl}}/users
+Accept: application/json
+
+### Test validation error - invalid user ID
+GET {{baseUrl}}/users/0
+Accept: application/json
+
+### Test not found error - non-existent user
+GET {{baseUrl}}/users/999
+Accept: application/json
+
+### Test validation error - invalid create user data
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "firstName": "",
+  "lastName": "",
+  "email": "invalid-email"
+}
+
+### Test conflict error - duplicate email
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "firstName": "Test",
+  "lastName": "User",
+  "email": "john.doe@techhive.com"
+}
+
+### Test validation error - invalid update user ID
+PUT {{baseUrl}}/users/-1
+Content-Type: application/json
+
+{
+  "firstName": "Updated Name"
+}
+
+### Test not found error - update non-existent user
+PUT {{baseUrl}}/users/999
+Content-Type: application/json
+
+{
+  "firstName": "Updated Name"
+}
+
+### Test validation error - invalid delete user ID
+DELETE {{baseUrl}}/users/0
+Accept: application/json
+
+### Test not found error - delete non-existent user
+DELETE {{baseUrl}}/users/999
+Accept: application/json
+
+### Test different error types using the test endpoint
+
+### Test validation error
+GET {{baseUrl}}/users/test-error/validation
+Accept: application/json
+
+### Test not found error
+GET {{baseUrl}}/users/test-error/notfound
+Accept: application/json
+
+### Test conflict error
+GET {{baseUrl}}/users/test-error/conflict
+Accept: application/json
+
+### Test unauthorized error
+GET {{baseUrl}}/users/test-error/unauthorized
+Accept: application/json
+
+### Test argument error
+GET {{baseUrl}}/users/test-error/argument
+Accept: application/json
+
+### Test invalid operation error
+GET {{baseUrl}}/users/test-error/invalidoperation
+Accept: application/json
+
+### Test generic exception
+GET {{baseUrl}}/users/test-error/generic
+Accept: application/json
+
+### Test help for error types
+GET {{baseUrl}}/users/test-error/help
+Accept: application/json
