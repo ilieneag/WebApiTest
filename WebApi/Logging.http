@@ -1,0 +1,50 @@
+### Testing Request/Response Logging Middleware
+
+@baseUrl = http://localhost:5229/api
+
+### Test basic GET request (should be logged)
+GET {{baseUrl}}/users
+Accept: application/json
+
+### Test GET request with specific ID (should be logged)
+GET {{baseUrl}}/users/1
+Accept: application/json
+
+### Test POST request (should be logged with request body if enabled)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "firstName": "Test",
+  "lastName": "User",
+  "email": "test.user@techhive.com",
+  "phoneNumber": "+1-555-0199",
+  "department": "Testing",
+  "jobTitle": "Test Engineer"
+}
+
+### Test PUT request (should be logged)
+PUT {{baseUrl}}/users/1
+Content-Type: application/json
+
+{
+  "department": "Updated Department"
+}
+
+### Test DELETE request (should be logged)
+DELETE {{baseUrl}}/users/4
+Accept: application/json
+
+### Test 404 error (should be logged with warning level)
+GET {{baseUrl}}/users/999
+Accept: application/json
+
+### Test 400 error (should be logged with warning level)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "firstName": "",
+  "lastName": "",
+  "email": "invalid-email"
+}
