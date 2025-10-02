@@ -1,0 +1,97 @@
+### JWT Authentication Middleware Test File
+### This file tests the custom JWT authentication middleware
+
+@baseUrl = http://localhost:5235/api
+@email = test@techhive.com
+@password = Test123!
+
+### 1. Test public endpoint (should work without token) - Auth Test
+GET {{baseUrl}}/auth/test
+
+### 2. Test protected endpoint without token (should return 401)
+GET {{baseUrl}}/users
+
+### 3. Register a new user (public endpoint)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "{{email}}",
+    "password": "{{password}}",
+    "confirmPassword": "{{password}}"
+}
+
+### 4. Login to get JWT token (public endpoint)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "{{password}}"
+}
+
+### 5. Test protected endpoint with valid token (should work)
+GET {{baseUrl}}/users
+Authorization: Bearer {{login.response.body.token}}
+
+### 6. Test creating a user with valid token (should work)
+POST {{baseUrl}}/users
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "email": "jane.doe@techhive.com",
+    "phoneNumber": "+1-555-0200",
+    "department": "Marketing", 
+    "jobTitle": "Marketing Manager"
+}
+
+### 7. Test with invalid token (should return 401)
+GET {{baseUrl}}/users
+Authorization: Bearer invalid.jwt.token.here
+
+### 8. Test with malformed token (should return 401)
+GET {{baseUrl}}/users
+Authorization: Bearer malformed-token
+
+### 9. Test with expired token (simulate by using old/invalid token)
+GET {{baseUrl}}/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+### 10. Test with token in query string (fallback method)
+GET {{baseUrl}}/users?token={{login.response.body.token}}
+
+### 11. Test auth info endpoint with valid token
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{login.response.body.token}}
+
+### 12. Test specific user endpoint with valid token
+GET {{baseUrl}}/users/1
+Authorization: Bearer {{login.response.body.token}}
+
+### 13. Test update user with valid token
+PUT {{baseUrl}}/users/1
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+    "firstName": "Updated",
+    "lastName": "Name",
+    "email": "updated@techhive.com",
+    "phoneNumber": "+1-555-9999",
+    "department": "Updated Department",
+    "jobTitle": "Updated Title"
+}
+
+### 14. Test delete user with valid token
+DELETE {{baseUrl}}/users/3
+Authorization: Bearer {{login.response.body.token}}
+
+### 15. Test accessing user after deletion (should return 404)
+GET {{baseUrl}}/users/3
+Authorization: Bearer {{login.response.body.token}}

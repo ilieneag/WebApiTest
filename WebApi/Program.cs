@@ -124,7 +124,10 @@ try
     // Remove HTTPS redirection so you can test with http
     // app.UseHttpsRedirection();
 
-    // Add authentication and authorization middleware
+    // Add our custom JWT authentication middleware (validates tokens and handles 401 responses)
+    app.UseJwtAuthentication();
+
+    // Add built-in authentication and authorization middleware (works with [Authorize] attributes)
     app.UseAuthentication();
     app.UseAuthorization();
 

@@ -1,0 +1,27 @@
+### Quick test for JWT Authentication Middleware
+
+### Register a new user
+POST http://localhost:5239/api/auth/register
+Content-Type: application/json
+
+{
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "testuser@techhive.com",
+    "password": "TestPassword123!",
+    "confirmPassword": "TestPassword123!"
+}
+
+### Login to get token
+# @name login
+POST http://localhost:5239/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "testuser@techhive.com",
+    "password": "TestPassword123!"
+}
+
+### Test protected endpoint with valid token
+GET http://localhost:5239/api/users
+Authorization: Bearer {{login.response.body.token}}

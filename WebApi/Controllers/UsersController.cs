@@ -9,7 +9,6 @@ namespace WebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Require authentication for all endpoints
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
