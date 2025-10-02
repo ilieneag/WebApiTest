@@ -28,10 +28,20 @@ namespace WebApi.Models
         [StringLength(100)]
         public string? JobTitle { get; set; }
         
+        // Authentication fields
+        [Required]
+        public string PasswordHash { get; set; } = string.Empty;
+        
+        public string? RefreshToken { get; set; }
+        
+        public DateTime? RefreshTokenExpiryTime { get; set; }
+        
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime? UpdatedAt { get; set; }
         
         public bool IsActive { get; set; } = true;
+        
+        public List<string> Roles { get; set; } = new() { "User" };
     }
 }

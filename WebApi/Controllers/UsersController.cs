@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using WebApi.Models;
 using WebApi.DTOs;
 using WebApi.Services;
@@ -8,6 +9,7 @@ namespace WebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Require authentication for all endpoints
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;

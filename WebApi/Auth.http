@@ -1,0 +1,78 @@
+### Authentication API Test File
+### Base URL for all requests
+@baseUrl = http://localhost:5235/api
+
+### Variables
+@email = test@techhive.com
+@password = Test123!
+@token = {{login.response.body.token}}
+
+### Register a new user
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "{{email}}",
+    "password": "{{password}}",
+    "confirmPassword": "{{password}}"
+}
+
+### Login with user credentials
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "{{password}}"
+}
+
+### Test authentication status (no token)
+GET {{baseUrl}}/auth/test
+
+### Test authentication status (with token)
+GET {{baseUrl}}/auth/test
+Authorization: Bearer {{token}}
+
+### Get current user information
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Access protected users endpoint (should fail without token)
+GET {{baseUrl}}/users
+
+### Access protected users endpoint (with token)
+GET {{baseUrl}}/users
+Authorization: Bearer {{token}}
+
+### Create a new user (with authentication)
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "firstName": "Jane",
+    "lastName": "Smith", 
+    "email": "jane.smith@techhive.com",
+    "phoneNumber": "+1-555-0123",
+    "department": "Engineering",
+    "jobTitle": "Software Developer"
+}
+
+### Refresh token
+POST {{baseUrl}}/auth/refresh-token
+Content-Type: application/json
+
+{
+    "refreshToken": "{{login.response.body.refreshToken}}"
+}
+
+### Logout (revoke refresh token)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+
+### Test endpoint after logout
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}

@@ -1,6 +1,10 @@
 using Serilog;
 using WebApi.Services;
 using WebApi.Middleware;
+using WebApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 // Configure Serilog early to capture startup logs
 Log.Logger = new LoggerConfiguration()
@@ -22,11 +26,60 @@ try
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName));
 
+    // Configure JWT Settings
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+    if (jwtSettings == null)
+    {
+        throw new InvalidOperationException("JWT settings are not configured properly");
+    }
+
     // Add services to the container.
     builder.Services.AddControllers();
 
-    // Register user service
+    // Configure JWT authentication
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Log.Warning("JWT Authentication failed: {Message}", context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Log.Debug("JWT Token validated for user: {UserId}", 
+                    context.Principal?.FindFirst("userId")?.Value ?? "Unknown");
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+    // Add authorization
+    builder.Services.AddAuthorization();
+
+    // Register services
+    builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
     builder.Services.AddScoped<IUserService, UserService>();
+    builder.Services.AddScoped<IJwtService, JwtService>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
 
     var app = builder.Build();
 
@@ -71,6 +124,8 @@ try
     // Remove HTTPS redirection so you can test with http
     // app.UseHttpsRedirection();
 
+    // Add authentication and authorization middleware
+    app.UseAuthentication();
     app.UseAuthorization();
 
     app.MapControllers();
